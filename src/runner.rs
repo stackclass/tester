@@ -12,23 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod case;
-mod cli;
-mod context;
-mod definition;
-mod error;
-mod executable;
-mod harness;
-mod runner;
-mod tester;
+use std::path::Path;
 
-// Re-exports
-pub use case::Case;
-pub use cli::run;
-pub use context::Context;
-pub use definition::Definition;
-pub use error::{Result, TesterError};
-pub use executable::Executable;
-pub use harness::Harness;
-pub use runner::{Runner, Step};
-pub use tester::Tester;
+use crate::Case;
+
+pub struct Runner<'a> {
+    _steps: Vec<Step<'a>>,
+}
+
+pub struct Step<'a> {
+    pub case: &'a Case,
+    pub log_prefix: String,
+    pub title: String,
+}
+
+impl<'a> Runner<'a> {
+    pub fn new(steps: Vec<Step<'a>>) -> Self {
+        Self { _steps: steps }
+    }
+
+    pub fn run(&self, _is_debug: bool, _executable: &Path) -> bool {
+        // Implementation would run each step and return success/failure
+        unimplemented!()
+    }
+}

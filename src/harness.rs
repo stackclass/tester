@@ -12,23 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod case;
-mod cli;
-mod context;
-mod definition;
-mod error;
-mod executable;
-mod harness;
-mod runner;
-mod tester;
-
-// Re-exports
-pub use case::Case;
-pub use cli::run;
-pub use context::Context;
-pub use definition::Definition;
-pub use error::{Result, TesterError};
-pub use executable::Executable;
-pub use harness::Harness;
-pub use runner::{Runner, Step};
-pub use tester::Tester;
+pub struct Harness;

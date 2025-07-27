@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod case;
-mod cli;
-mod context;
-mod definition;
-mod error;
-mod executable;
-mod harness;
-mod runner;
-mod tester;
+use crate::{Result, TesterError};
+use std::path::PathBuf;
 
-// Re-exports
-pub use case::Case;
-pub use cli::run;
-pub use context::Context;
-pub use definition::Definition;
-pub use error::{Result, TesterError};
-pub use executable::Executable;
-pub use harness::Harness;
-pub use runner::{Runner, Step};
-pub use tester::Tester;
+#[derive(Debug, Clone)]
+pub struct Executable {
+    _path: PathBuf,
+}
+
+impl Executable {
+    pub fn new(path: PathBuf) -> Result<Self> {
+        if !path.exists() {
+            return Err(TesterError::ExecutableNotFound(path));
+        }
+        Ok(Self { _path: path })
+    }
+}
