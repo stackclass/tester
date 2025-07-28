@@ -13,15 +13,15 @@
 // limitations under the License.
 
 use crate::{Definition, Tester};
-use std::process::ExitCode;
+use std::{collections::HashMap, process::ExitCode};
 
 /// Executes the provided test definition and returns an exit code.
-pub fn run(definition: Definition) -> ExitCode {
+pub fn run(env: HashMap<String, String>, definition: Definition) -> ExitCode {
     // Create a new tester instance
-    let tester = match Tester::new(definition) {
+    let tester = match Tester::new(env, definition) {
         Ok(tester) => tester,
         Err(err) => {
-            eprintln!("Error creating tester: {err}");
+            eprintln!("{err}");
             return ExitCode::FAILURE;
         }
     };
@@ -31,7 +31,7 @@ pub fn run(definition: Definition) -> ExitCode {
 
     // Early exit if validation fails
     if let Err(err) = tester.validate() {
-        eprintln!("Validation failed: {err}");
+        eprintln!("{err}");
         return ExitCode::FAILURE;
     }
 

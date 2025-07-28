@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::{Context, Definition, Executable, Result, Runner, Step};
 
 /// Manages the execution environment & runner for test cases.
@@ -25,8 +27,7 @@ pub struct Tester {
 
 impl Tester {
     /// Creates a Tester based on the Definition provided
-    pub fn new(definition: Definition) -> Result<Self> {
-        let env = std::env::vars().collect();
+    pub fn new(env: HashMap<String, String>, definition: Definition) -> Result<Self> {
         let context = Context::from_env(env, &definition)?;
 
         Ok(Self { context, definition })
