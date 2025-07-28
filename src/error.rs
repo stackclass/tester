@@ -51,6 +51,30 @@ pub enum TesterError {
 
     #[error("{0}")]
     Custom(String),
+
+    #[error("Process is already running")]
+    ProcessAlreadyRunning,
+
+    #[error("No process is currently running")]
+    NoProcessRunning,
+
+    #[error("Failed to capture stdin")]
+    StdinCaptureFailed,
+
+    #[error("Failed to capture stdout")]
+    StdoutCaptureFailed,
+
+    #[error("Failed to capture stderr")]
+    StderrCaptureFailed,
+
+    #[error("Failed to wait for process: {0}")]
+    ProcessWaitFailed(String),
+
+    #[error("Failed to kill process: {0}")]
+    ProcessKillFailed(String),
+
+    #[error("Process wait timed out after {0:?}")]
+    WaitTimeout(Duration),
 }
 
 impl TesterError {
@@ -66,7 +90,7 @@ impl TesterError {
 
     /// Checks if the error is a timeout error.
     pub fn is_timeout(&self) -> bool {
-        matches!(self, Self::Timeout(_))
+        matches!(self, Self::Timeout(_) | Self::WaitTimeout(_))
     }
 
     /// Determines whether the error is recoverable.
