@@ -15,6 +15,7 @@
 use crate::{Definition, Result, TesterError};
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf, time::Duration};
+use tracing::debug;
 
 /// Holds all configuration and runtime context for the tester, including
 /// environment variables, test cases, and execution settings.
@@ -65,6 +66,25 @@ impl Context {
         let cases: Vec<ContextCase> = serde_json::from_str(test_cases_json)
             .map_err(|e| TesterError::JsonParse(e.to_string()))?;
 
+        // Validate test cases
+        for case in &cases {
+            if case.slug.is_empty() {
+                return Err(TesterError::InvalidTestCase("Test case slug cannot be empty".into()));
+            }
+            if case.title.is_empty() {
+                return Err(TesterError::InvalidTestCase("Test case title cannot be empty".into()));
+            }
+            if case.log_prefix.is_empty() {
+                return Err(TesterError::InvalidTestCase(
+                    "Test case log prefix cannot be empty".into(),
+                ));
+            }
+        }
+
+        if cases.is_empty() {
+            return Err(TesterError::InvalidTestCase("No test cases provided".into()));
+        }
+
         let executable_path = Self::find_executable(submission_dir, definition)?;
         let is_debug = env.get("STACKCLASS_DEBUG").is_some_and(|v| v == "true");
         let timeout = env
@@ -80,9 +100,21 @@ impl Context {
     }
 
     /// Locates the executable in the submission directory based on the `Definition`.
-    fn find_executable(_dir: &str, _definition: &Definition) -> Result<PathBuf> {
-        // Implement logic here, e.g., searching for a binary or script.
-        // Return `TesterError::ExecutableNotFound` if not found.
-        Ok(PathBuf::new())
+    fn find_executable(dir: &str, definition: &Definition) -> Result<PathBuf> {
+        let executable_path = PathBuf::from(dir).join(&definition.executable_name);
+
+        if executable_path.exists() {
+            debug!("executable path: {}", executable_path.display());
+            return Ok(executable_path);
+        }
+
+        if let Some(legacy_file_name) = &definition.legacy_executable_name {
+            let legacy_executable_path = PathBuf::from(dir).join(legacy_file_name);
+            if legacy_executable_path.exists() {
+                return Ok(legacy_executable_path);
+            }
+        }
+
+        Err(TesterError::ExecutableNotFound(executable_path))
     }
 }
