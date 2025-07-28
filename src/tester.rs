@@ -16,7 +16,10 @@ use crate::{Context, Definition, Executable, Result, Runner, Step};
 
 /// Manages the execution environment & runner for test cases.
 pub struct Tester {
+    /// Execution context with env vars, debug flags, and test cases
     context: Context,
+
+    /// Test definition with all test cases and configs
     definition: Definition,
 }
 
@@ -31,7 +34,7 @@ impl Tester {
 
     /// Runs all stages up to the current stage. Returns true if all stages pass.
     pub fn run(&self) -> bool {
-        self.get_runner().run(self.context.is_debug, &self.get_executable())
+        self.build_runner().run(self.context.is_debug, &self.get_executable())
     }
 
     /// Prints the debug context if debugging is enabled.
@@ -43,25 +46,25 @@ impl Tester {
         println!("{:?}", self.context);
     }
 
-    /// Creates a TestRunner with steps mapped from context and definition test cases.
-    fn get_runner(&self) -> Runner {
-        let steps: Vec<Step> = self
-            .context
+    /// Collects steps by matching context cases with definition cases.
+    fn collect_steps(&self) -> Vec<Step> {
+        self.context
             .cases
             .iter()
             .filter_map(|context_case| {
-                // Find matching test case in definition
                 let definition_case = self.definition.find_case(&context_case.slug)?;
-
                 Some(Step {
                     case: definition_case,
                     log_prefix: &context_case.log_prefix,
                     title: &context_case.title,
                 })
             })
-            .collect();
+            .collect()
+    }
 
-        Runner::new(steps)
+    /// Builds a `Runner` from collected steps.
+    fn build_runner(&self) -> Runner {
+        Runner::new(self.collect_steps())
     }
 
     /// Gets the executable from the context (verbose mode).
