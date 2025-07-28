@@ -13,10 +13,10 @@
 // limitations under the License.
 
 use crate::{Harness, Result};
-use std::{fmt, time::Duration};
+use std::{fmt, sync::Arc, time::Duration};
 
 /// A function type representing a test case's logic.
-pub type Function = Box<dyn Fn(&Harness) -> Result<()> + Send + Sync>;
+pub type Function = Arc<dyn Fn(&Harness) -> Result<()> + Send + Sync>;
 
 /// Represents a test case that will be executed against the user's code.
 pub struct Case {

@@ -22,6 +22,7 @@ use crate::executable::Executable;
 /// Alias for a thread-safe collection of teardown functions.
 type TeardownFuncs = Arc<Mutex<Vec<Box<dyn FnOnce() + Send>>>>;
 
+#[derive(Clone)]
 pub struct Harness {
     /// Executable is the program to be tested.
     executable: Executable,

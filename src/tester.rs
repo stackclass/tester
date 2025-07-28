@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
-
-use crate::{Context, Definition, Result, Runner, Step};
+use crate::{Context, Definition, Executable, Result, Runner, Step};
 
 /// Manages the execution environment & runner for test cases.
 pub struct Tester {
@@ -57,8 +55,8 @@ impl Tester {
 
                 Some(Step {
                     case: definition_case,
-                    log_prefix: context_case.log_prefix.clone(),
-                    title: context_case.title.clone(),
+                    log_prefix: &context_case.log_prefix,
+                    title: &context_case.title,
                 })
             })
             .collect();
@@ -66,9 +64,9 @@ impl Tester {
         Runner::new(steps)
     }
 
-    /// Gets the executable path from context
-    fn get_executable(&self) -> PathBuf {
-        self.context.executable_path.clone()
+    /// Gets the executable from the context (verbose mode).
+    fn get_executable(&self) -> Executable {
+        Executable::new(self.context.executable_path.clone()).expect("Failed to create executable")
     }
 
     /// Validates that all test cases in the context have matching test cases in the definition.
