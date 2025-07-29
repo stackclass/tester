@@ -35,11 +35,13 @@ pub fn run(env: HashMap<String, String>, definition: Definition) -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    // Execute test stages. Return failure if any stage fails.
-    if !tester.run() {
-        return ExitCode::FAILURE;
+    // Execute test stages. Return failure if any stage fails or if an error occurs.
+    match tester.run() {
+        Ok(true) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::FAILURE,
+        Err(err) => {
+            eprintln!("{err}");
+            ExitCode::FAILURE
+        }
     }
-
-    // All stages passed successfully.
-    ExitCode::SUCCESS
 }

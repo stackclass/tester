@@ -14,6 +14,7 @@
 
 use crate::{Result, TesterError};
 use std::{
+    fs,
     io::{Read, Write},
     path::PathBuf,
     process::{Child, Command, ExitStatus, Stdio},
@@ -79,6 +80,15 @@ impl Executable {
     pub fn new(path: PathBuf) -> Result<Self> {
         if !path.exists() {
             return Err(TesterError::ExecutableNotFound(path));
+        }
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let metadata = fs::metadata(&path)?;
+            if metadata.permissions().mode() & 0o111 == 0 {
+                return Err(TesterError::ProcessExecution("File is not executable".to_string()));
+            }
         }
 
         Ok(Self {
@@ -234,6 +244,11 @@ impl Executable {
     ) -> Result<(Vec<u8>, Vec<u8>, ExitStatus)> {
         self.start(args)?;
         self.write_stdin(stdin)?;
+        // Close stdin after writing to signal EOF
+        if let Some(process) = &self.process {
+            let mut process = process.lock().unwrap();
+            process.stdin.take();
+        }
         self.wait()
     }
 

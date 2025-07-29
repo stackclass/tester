@@ -34,8 +34,8 @@ impl Tester {
     }
 
     /// Runs all stages up to the current stage. Returns true if all stages pass.
-    pub fn run(&self) -> bool {
-        self.build_runner().run(self.context.is_debug, &self.get_executable())
+    pub fn run(&self) -> Result<bool> {
+        Ok(self.build_runner().run(self.context.is_debug, &self.get_executable()?))
     }
 
     /// Prints the debug context if debugging is enabled.
@@ -69,8 +69,8 @@ impl Tester {
     }
 
     /// Gets the executable from the context (verbose mode).
-    fn get_executable(&self) -> Executable {
-        Executable::new(self.context.executable_path.clone()).expect("Failed to create executable")
+    fn get_executable(&self) -> Result<Executable> {
+        Executable::new(self.context.executable_path.clone())
     }
 
     /// Validates that all test cases in the context have matching test cases in the definition.
