@@ -67,28 +67,20 @@ fn test_start_and_kill() {
 }
 
 #[test]
-fn test_run_with_stdin() {
-    let (path, _dir) = create_test_executable("echo.sh", "#!/bin/sh\ncat");
-    let mut exe = Executable::new(path).unwrap();
-
-    let (stdout, _, status) = exe.run_with_stdin(b"test", &[]).unwrap();
-    assert!(status.success());
-    assert_eq!(stdout, b"test");
-}
-
-#[test]
 fn test_output_capture() {
     // Test stdout capture
     let (path, _dir) = create_test_executable("stdout.sh", "#!/bin/sh\necho \"$@\"");
     let mut exe = Executable::new(path).unwrap();
-    let (stdout, stderr, _) = exe.run_with_stdin(b"", &["test"]).unwrap();
+    exe.start(&["test"]).unwrap();
+    let (stdout, stderr, _) = exe.wait().unwrap();
     assert_eq!(stdout, b"test\n");
     assert!(stderr.is_empty());
 
     // Test stderr capture
     let (path, _dir) = create_test_executable("stderr.sh", "#!/bin/sh\necho \"$@\" >&2");
     let mut exe = Executable::new(path).unwrap();
-    let (stdout, stderr, _) = exe.run_with_stdin(b"", &["test"]).unwrap();
+    exe.start(&["test"]).unwrap();
+    let (stdout, stderr, _) = exe.wait().unwrap();
     assert!(stdout.is_empty());
     assert_eq!(stderr, b"test\n");
 }
@@ -98,10 +90,12 @@ fn test_exit_code() {
     let (path, _dir) = create_test_executable("exit.sh", "#!/bin/sh\nexit $1");
     let mut exe = Executable::new(path).unwrap();
 
-    let (_, _, status) = exe.run_with_stdin(b"", &["0"]).unwrap();
+    exe.start(&["0"]).unwrap();
+    let (_, _, status) = exe.wait().unwrap();
     assert!(status.success());
 
-    let (_, _, status) = exe.run_with_stdin(b"", &["1"]).unwrap();
+    exe.start(&["1"]).unwrap();
+    let (_, _, status) = exe.wait().unwrap();
     assert!(!status.success());
 }
 

@@ -15,7 +15,7 @@
 use crate::{Result, TesterError};
 use std::{
     fs,
-    io::{Read, Write},
+    io::Read,
     path::PathBuf,
     process::{Child, Command, ExitStatus, Stdio},
     sync::{Arc, Mutex, mpsc},
@@ -26,7 +26,7 @@ use std::{
 /// Represents an executable process with configurable execution parameters.
 ///
 /// This struct provides methods to start, manage, and interact with a child process,
-/// including reading its output, writing to its stdin, and handling timeouts.
+/// including reading its output and handling timeouts.
 #[derive(Debug)]
 pub struct Executable {
     /// Path to the executable file.
@@ -135,7 +135,7 @@ impl Executable {
         }
 
         let mut cmd = Command::new(&self.path);
-        cmd.args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
 
         if let Some(dir) = &self.working_dir {
             cmd.current_dir(dir);
@@ -177,18 +177,6 @@ impl Executable {
 
         self.process = Some(Arc::new(Mutex::new(process)));
         self.rx = Some(rx);
-
-        Ok(())
-    }
-
-    /// Writes data to the process's stdin.
-    pub fn write_stdin(&mut self, input: &[u8]) -> Result<()> {
-        if !self.is_running() {
-            return Err(TesterError::NoProcessRunning);
-        }
-        let mut process = self.process.as_mut().unwrap().lock().unwrap();
-        let stdin = process.stdin.as_mut().ok_or(TesterError::StdinCaptureFailed)?;
-        stdin.write_all(input).map_err(|e| TesterError::ProcessExecution(e.to_string()))?;
 
         Ok(())
     }
@@ -238,22 +226,6 @@ impl Executable {
         self.process = None;
 
         Ok(())
-    }
-
-    /// Starts the process, writes stdin, and waits for completion.
-    pub fn run_with_stdin(
-        &mut self,
-        stdin: &[u8],
-        args: &[&str],
-    ) -> Result<(Vec<u8>, Vec<u8>, ExitStatus)> {
-        self.start(args)?;
-        self.write_stdin(stdin)?;
-        // Close stdin after writing to signal EOF
-        if let Some(process) = &self.process {
-            let mut process = process.lock().unwrap();
-            process.stdin.take();
-        }
-        self.wait()
     }
 
     /// Non-blocking check for process status.
