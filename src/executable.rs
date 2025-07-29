@@ -118,7 +118,11 @@ impl Executable {
     pub fn is_running(&self) -> bool {
         if let Some(process) = &self.process {
             let mut process = process.lock().unwrap();
-            process.try_wait().map_or(true, |status| status.is_none())
+            match process.try_wait() {
+                Ok(None) => true,     // Process is still running
+                Ok(Some(_)) => false, // Process has exited
+                Err(_) => false,      // Assume process is not running if try_wait fails
+            }
         } else {
             false
         }
