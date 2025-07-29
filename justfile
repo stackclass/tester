@@ -21,6 +21,7 @@ fmt:
 # Test the project
 test:
     cargo test --workspace --all-features --all-targets
+    cargo run --example echo-tester
 
 # Run all the checks
 check:

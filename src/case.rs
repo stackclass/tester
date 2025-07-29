@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{Harness, Result};
-use std::{fmt, sync::Arc, time::Duration};
+use crate::Harness;
+use std::{error::Error, fmt, sync::Arc, time::Duration};
+
+/// A generic error type that can represent any error implementing `std::error::Error`.
+pub type CaseError = Box<dyn Error + Send + Sync>;
 
 /// A function type representing a test case's logic.
-pub type Function = Arc<dyn Fn(&Harness) -> Result<()> + Send + Sync>;
+pub type Function = Arc<dyn Fn(&Harness) -> Result<(), CaseError> + Send + Sync>;
 
 /// Represents a test case that will be executed against the user's code.
 pub struct Case {
@@ -31,6 +34,11 @@ pub struct Case {
 }
 
 impl Case {
+    /// Creates a new `Case` with the given slug and function.
+    pub fn new<S: Into<String>>(slug: S, function: Function) -> Self {
+        Self { slug: slug.into(), function, timeout: Duration::from_secs(10) }
+    }
+
     /// Returns the timeout duration.
     /// defaulting to 10 seconds if none is specified.
     pub fn default_timeout(&self) -> Duration {

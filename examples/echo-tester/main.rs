@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, process::ExitCode, sync::Arc, time::Duration};
+use std::{collections::HashMap, process::ExitCode, sync::Arc};
 
 use tester::{Case, Definition};
 
@@ -37,13 +37,8 @@ fn main() -> ExitCode {
     // Create a minimal test definition with a Hello World test case
     let definition = Definition {
         executable_name: "your_program.sh".to_string(),
-        legacy_executable_name: Some("your_program.sh".to_string()),
-        anti_cheat_cases: vec![],
-        cases: vec![Case {
-            slug: "hello-world".to_string(),
-            function: Arc::new(|_| Ok(())), // Placeholder for test logic
-            timeout: Duration::from_secs(10),
-        }],
+        cases: vec![Case::new("hello-world", Arc::new(|_| Ok(())))],
+        ..Default::default()
     };
 
     // Run the test CLI

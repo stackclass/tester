@@ -23,7 +23,7 @@ mod runner;
 mod tester;
 
 // Re-exports
-pub use case::Case;
+pub use case::{Case, CaseError, Function};
 pub use cli::run;
 pub use context::Context;
 pub use definition::Definition;

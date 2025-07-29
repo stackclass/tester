@@ -15,7 +15,7 @@
 use crate::case::Case;
 
 /// Represents a test definition, containing metadata and test cases.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Definition {
     /// The name of the executable associated with the test.
     pub executable_name: String,
