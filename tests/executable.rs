@@ -25,6 +25,10 @@ fn create_test_executable(name: &str, content: &str) -> (PathBuf, tempfile::Temp
     // Flush and sync the file to disk
     file.sync_all().unwrap();
 
+    // Sync the parent directory to ensure metadata is fully written
+    let parent_dir = std::fs::File::open(dir.path()).unwrap();
+    parent_dir.sync_all().unwrap();
+
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
