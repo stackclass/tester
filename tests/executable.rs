@@ -36,21 +36,18 @@ fn create_test_executable(name: &str, content: &str) -> (PathBuf, tempfile::Temp
     (path, dir)
 }
 
+#[cfg(unix)]
 #[test]
 fn test_start() {
     // Test non-existent executable
     let err = Executable::new(PathBuf::from("/nonexistent")).unwrap_err();
     assert!(matches!(err, TesterError::ExecutableNotFound(_)));
 
-    // Test non-executable file (Unix only)
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let (path, _dir) = create_test_executable("not_executable", "");
-        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
-        let err = Executable::new(path).unwrap_err();
-        assert!(matches!(err, TesterError::ProcessExecution(_)));
-    }
+    use std::os::unix::fs::PermissionsExt;
+    let (path, _dir) = create_test_executable("not_executable", "");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+    let err = Executable::new(path).unwrap_err();
+    assert!(matches!(err, TesterError::ProcessExecution(_)));
 
     // Test valid executable
     let (path, _dir) = create_test_executable("echo.sh", "#!/bin/sh\necho \"$@\"");
@@ -58,6 +55,7 @@ fn test_start() {
     assert!(exe.start(&[]).is_ok());
 }
 
+#[cfg(unix)]
 #[test]
 fn test_start_and_kill() {
     let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
@@ -70,6 +68,7 @@ fn test_start_and_kill() {
     assert!(!exe.is_running());
 }
 
+#[cfg(unix)]
 #[test]
 fn test_output_capture() {
     // Test stdout capture
@@ -87,6 +86,7 @@ fn test_output_capture() {
     assert_eq!(stderr, b"test\n");
 }
 
+#[cfg(unix)]
 #[test]
 fn test_exit_code() {
     let (path, _dir) = create_test_executable("exit.sh", "#!/bin/sh\nexit $1");
@@ -99,6 +99,20 @@ fn test_exit_code() {
     assert!(!status.success());
 }
 
+#[cfg(windows)]
+#[test]
+fn test_exit_code() {
+    let (path, _dir) = create_test_executable("exit.bat", "@echo off\nexit /b %1");
+    let mut exe = Executable::new(path).unwrap();
+
+    let (_, _, status) = exe.run(&["0"]).unwrap();
+    assert!(status.success());
+
+    let (_, _, status) = exe.run(&["1"]).unwrap();
+    assert!(!status.success());
+}
+
+#[cfg(unix)]
 #[test]
 fn test_double_start() {
     let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 1");
@@ -109,6 +123,7 @@ fn test_double_start() {
     assert!(matches!(err, TesterError::ProcessAlreadyRunning));
 }
 
+#[cfg(unix)]
 #[test]
 fn test_timeout() {
     let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
@@ -119,6 +134,7 @@ fn test_timeout() {
     assert!(matches!(err, TesterError::WaitTimeout(_)));
 }
 
+#[cfg(unix)]
 #[test]
 fn test_kill_after_timeout() {
     let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
