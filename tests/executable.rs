@@ -12,53 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fs, io::Write, path::PathBuf, time::Duration};
-use tempfile::tempdir;
+use std::{fs, io::Write, path::PathBuf};
+use tempfile::TempDir;
 use tester::{Executable, TesterError};
 
-fn create_test_executable(name: &str, content: &str) -> (PathBuf, tempfile::TempDir) {
-    let dir = tempdir().unwrap();
-    let path = dir.path().join(name);
-    let mut file = fs::File::create(&path).unwrap();
-    file.write_all(content.as_bytes()).unwrap();
+fn create_test_executable(name: &str, content: &str) -> PathBuf {
+    // Create a temporary directory for the executable
+    let temp_dir = TempDir::new().unwrap();
+    let temp_dir_path = temp_dir.path();
 
-    // Flush and sync the file to disk
-    file.sync_all().unwrap();
+    // Create a temporary file inside the temporary directory
+    let mut temp_file = tempfile::NamedTempFile::new_in(temp_dir_path).unwrap();
+    temp_file.write_all(content.as_bytes()).unwrap();
 
-    // Sync the parent directory to ensure metadata is fully written
-    let parent_dir = std::fs::File::open(dir.path()).unwrap();
-    parent_dir.sync_all().unwrap();
+    // Define the final path for the executable (inside the same temp directory)
+    let path = temp_dir_path.join(name);
+
+    // Persist the temporary file to the final path
+    temp_file.persist(&path).unwrap();
 
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
-        // Sync metadata changes (optional but thorough)
-        let _ = std::fs::File::open(&path).unwrap().sync_all();
-
-        // Wait until the file is executable and not busy
-        loop {
-            let metadata = fs::metadata(&path).unwrap();
-            if metadata.permissions().mode() & 0o111 != 0 {
-                // Try to open the file in read-only mode to check if it's busy
-                if fs::File::open(&path).is_ok() {
-                    break;
-                }
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
     }
 
     #[cfg(windows)]
     {
-        // On Windows, ensure the file is executable by setting the appropriate attributes
         use std::os::windows::fs::PermissionsExt;
         let mut permissions = fs::metadata(&path).unwrap().permissions();
         permissions.set_readonly(false);
         fs::set_permissions(&path, permissions).unwrap();
     }
 
-    (path, dir)
+    // Leak the temporary directory to prevent deletion (optional, if needed)
+    let _ = temp_dir.keep();
+
+    path
 }
 
 #[cfg(unix)]
@@ -69,13 +59,14 @@ fn test_start() {
     assert!(matches!(err, TesterError::ExecutableNotFound(_)));
 
     use std::os::unix::fs::PermissionsExt;
-    let (path, _dir) = create_test_executable("not_executable", "");
+    let path = create_test_executable("not_executable", "");
     fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
-    let err = Executable::new(path).unwrap_err();
+    let mut exe = Executable::new(path).unwrap();
+    let err = exe.start(&[]).unwrap_err();
     assert!(matches!(err, TesterError::ProcessExecution(_)));
 
     // Test valid executable
-    let (path, _dir) = create_test_executable("echo.sh", "#!/bin/sh\necho \"$@\"");
+    let path = create_test_executable("echo.sh", "#!/bin/sh\necho \"$@\"");
     let mut exe = Executable::new(path).unwrap();
     assert!(exe.start(&[]).is_ok());
 }
@@ -83,7 +74,7 @@ fn test_start() {
 #[cfg(unix)]
 #[test]
 fn test_start_and_kill() {
-    let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
+    let path = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
     let mut exe = Executable::new(path).unwrap();
 
     // Start and kill
@@ -97,14 +88,14 @@ fn test_start_and_kill() {
 #[test]
 fn test_output_capture() {
     // Test stdout capture
-    let (path, _dir) = create_test_executable("stdout.sh", "#!/bin/sh\necho \"$@\"");
+    let path = create_test_executable("stdout.sh", "#!/bin/sh\necho \"$@\"");
     let mut exe = Executable::new(path).unwrap();
     let (stdout, stderr, _) = exe.run(&["test"]).unwrap();
     assert_eq!(stdout, b"test\n");
     assert!(stderr.is_empty());
 
     // Test stderr capture
-    let (path, _dir) = create_test_executable("stderr.sh", "#!/bin/sh\necho \"$@\" >&2");
+    let path = create_test_executable("stderr.sh", "#!/bin/sh\necho \"$@\" >&2");
     let mut exe = Executable::new(path).unwrap();
     let (stdout, stderr, _) = exe.run(&["test"]).unwrap();
     assert!(stdout.is_empty());
@@ -114,7 +105,7 @@ fn test_output_capture() {
 #[cfg(unix)]
 #[test]
 fn test_exit_code() {
-    let (path, _dir) = create_test_executable("exit.sh", "#!/bin/sh\nexit $1");
+    let path = create_test_executable("exit.sh", "#!/bin/sh\nexit $1");
     let mut exe = Executable::new(path).unwrap();
 
     let (_, _, status) = exe.run(&["0"]).unwrap();
@@ -127,7 +118,7 @@ fn test_exit_code() {
 #[cfg(windows)]
 #[test]
 fn test_exit_code() {
-    let (path, _dir) = create_test_executable("exit.bat", "@echo off\nexit /b %1");
+    let path = create_test_executable("exit.bat", "@echo off\nexit /b %1");
     let mut exe = Executable::new(path).unwrap();
 
     let (_, _, status) = exe.run(&["0"]).unwrap();
@@ -140,7 +131,7 @@ fn test_exit_code() {
 #[cfg(unix)]
 #[test]
 fn test_double_start() {
-    let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 1");
+    let path = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 1");
     let mut exe = Executable::new(path).unwrap();
 
     exe.start(&[]).unwrap();
@@ -151,7 +142,8 @@ fn test_double_start() {
 #[cfg(unix)]
 #[test]
 fn test_timeout() {
-    let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
+    use std::time::Duration;
+    let path = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
     let mut exe = Executable::new(path).unwrap().with_timeout(Duration::from_millis(100));
 
     exe.start(&[]).unwrap();
@@ -162,7 +154,8 @@ fn test_timeout() {
 #[cfg(unix)]
 #[test]
 fn test_kill_after_timeout() {
-    let (path, _dir) = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
+    use std::time::Duration;
+    let path = create_test_executable("sleep.sh", "#!/bin/sh\nsleep 10");
     let mut exe = Executable::new(path).unwrap().with_timeout(Duration::from_millis(100));
 
     exe.start(&[]).unwrap();

@@ -81,15 +81,6 @@ impl Executable {
             return Err(TesterError::ExecutableNotFound(path));
         }
 
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let metadata = std::fs::metadata(&path)?;
-            if metadata.permissions().mode() & 0o111 == 0 {
-                return Err(TesterError::ProcessExecution("File is not executable".to_string()));
-            }
-        }
-
         Ok(Self {
             path,
             timeout: Duration::from_secs(10),
