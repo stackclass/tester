@@ -128,7 +128,27 @@ impl Executable {
         }
     }
 
+    /// Runs the executable with the given arguments and returns its output.
+    /// This is a blocking call suitable for short-lived processes.
+    pub fn run(&mut self, args: &[&str]) -> Result<(Vec<u8>, Vec<u8>, ExitStatus)> {
+        if self.is_running() {
+            return Err(TesterError::ProcessAlreadyRunning);
+        }
+
+        let mut cmd = Command::new(&self.path);
+        cmd.args(args).stdin(Stdio::null());
+
+        if let Some(dir) = &self.working_dir {
+            cmd.current_dir(dir);
+        }
+
+        let output = cmd.output().map_err(|e| TesterError::ProcessExecution(e.to_string()))?;
+
+        Ok((output.stdout, output.stderr, output.status))
+    }
+
     /// Starts the process with the given arguments.
+    /// This is suitable for long-lived processes.
     pub fn start(&mut self, args: &[&str]) -> Result<()> {
         if self.is_running() {
             return Err(TesterError::ProcessAlreadyRunning);

@@ -71,16 +71,14 @@ fn test_output_capture() {
     // Test stdout capture
     let (path, _dir) = create_test_executable("stdout.sh", "#!/bin/sh\necho \"$@\"");
     let mut exe = Executable::new(path).unwrap();
-    exe.start(&["test"]).unwrap();
-    let (stdout, stderr, _) = exe.wait().unwrap();
+    let (stdout, stderr, _) = exe.run(&["test"]).unwrap();
     assert_eq!(stdout, b"test\n");
     assert!(stderr.is_empty());
 
     // Test stderr capture
     let (path, _dir) = create_test_executable("stderr.sh", "#!/bin/sh\necho \"$@\" >&2");
     let mut exe = Executable::new(path).unwrap();
-    exe.start(&["test"]).unwrap();
-    let (stdout, stderr, _) = exe.wait().unwrap();
+    let (stdout, stderr, _) = exe.run(&["test"]).unwrap();
     assert!(stdout.is_empty());
     assert_eq!(stderr, b"test\n");
 }
@@ -90,12 +88,10 @@ fn test_exit_code() {
     let (path, _dir) = create_test_executable("exit.sh", "#!/bin/sh\nexit $1");
     let mut exe = Executable::new(path).unwrap();
 
-    exe.start(&["0"]).unwrap();
-    let (_, _, status) = exe.wait().unwrap();
+    let (_, _, status) = exe.run(&["0"]).unwrap();
     assert!(status.success());
 
-    exe.start(&["1"]).unwrap();
-    let (_, _, status) = exe.wait().unwrap();
+    let (_, _, status) = exe.run(&["1"]).unwrap();
     assert!(!status.success());
 }
 
