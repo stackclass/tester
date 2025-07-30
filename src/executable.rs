@@ -14,7 +14,6 @@
 
 use crate::{Result, TesterError};
 use std::{
-    fs,
     io::Read,
     path::PathBuf,
     process::{Child, Command, ExitStatus, Stdio},
@@ -85,7 +84,7 @@ impl Executable {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let metadata = fs::metadata(&path)?;
+            let metadata = std::fs::metadata(&path)?;
             if metadata.permissions().mode() & 0o111 == 0 {
                 return Err(TesterError::ProcessExecution("File is not executable".to_string()));
             }

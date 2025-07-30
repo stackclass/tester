@@ -37,7 +37,7 @@ fn test_requires_app_dir() {
 #[test]
 fn test_valid_test_cases() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         (
             "STACKCLASS_TEST_CASES_JSON".to_string(),
             r#"[{ "slug": "test", "log_prefix": "test", "title": "Test" }]"#.to_string(),
@@ -51,7 +51,7 @@ fn test_valid_test_cases() {
 #[test]
 fn test_empty_test_cases() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         ("STACKCLASS_TEST_CASES_JSON".to_string(), "[]".to_string()),
     ]);
 
@@ -69,7 +69,7 @@ fn test_invalid_test_case_fields() {
 
     for (json, description) in test_cases {
         let env = HashMap::from([
-            ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+            ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
             ("STACKCLASS_TEST_CASES_JSON".to_string(), json.to_string()),
         ]);
 
@@ -98,7 +98,7 @@ fn test_executable_not_found() {
 #[test]
 fn test_timeout_parsing() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         (
             "STACKCLASS_TEST_CASES_JSON".to_string(),
             r#"[{ "slug": "test", "log_prefix": "test", "title": "Test" }]"#.to_string(),
@@ -113,7 +113,7 @@ fn test_timeout_parsing() {
 #[test]
 fn test_debug_flag() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         (
             "STACKCLASS_TEST_CASES_JSON".to_string(),
             r#"[{ "slug": "test", "log_prefix": "test", "title": "Test" }]"#.to_string(),
@@ -128,7 +128,7 @@ fn test_debug_flag() {
 #[test]
 fn test_skip_anti_cheat_flag() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         (
             "STACKCLASS_TEST_CASES_JSON".to_string(),
             r#"[{ "slug": "test", "log_prefix": "test", "title": "Test" }]"#.to_string(),

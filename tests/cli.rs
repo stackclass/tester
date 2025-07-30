@@ -39,11 +39,12 @@ fn build_test_cases_json(slugs: &[&str]) -> String {
 #[test]
 fn test_all_stages_pass() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         ("STACKCLASS_TEST_CASES_JSON".to_string(), build_test_cases_json(&["test-1", "test-2"])),
     ]);
 
     let definition = Definition {
+        executable_name: "your_program.sh".to_string(),
         cases: vec![
             Case::new("test-1", Arc::new(pass_func)),
             Case::new("test-2", Arc::new(pass_func)),
@@ -58,11 +59,12 @@ fn test_all_stages_pass() {
 #[test]
 fn test_one_stage_fails() {
     let env = HashMap::from([
-        ("STACKCLASS_REPOSITORY_DIR".to_string(), "/tmp".to_string()),
+        ("STACKCLASS_REPOSITORY_DIR".to_string(), "examples/echo-tester".to_string()),
         ("STACKCLASS_TEST_CASES_JSON".to_string(), build_test_cases_json(&["test-1", "test-2"])),
     ]);
 
     let definition = Definition {
+        executable_name: "your_program.sh".to_string(),
         cases: vec![
             Case::new("test-1", Arc::new(pass_func)),
             Case::new("test-2", Arc::new(fail_func)),
