@@ -35,6 +35,27 @@ fn create_test_executable(name: &str, content: &str) -> (PathBuf, tempfile::Temp
         fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
         // Sync metadata changes (optional but thorough)
         let _ = std::fs::File::open(&path).unwrap().sync_all();
+
+        // Wait until the file is executable and not busy
+        loop {
+            let metadata = fs::metadata(&path).unwrap();
+            if metadata.permissions().mode() & 0o111 != 0 {
+                // Try to open the file in read-only mode to check if it's busy
+                if fs::File::open(&path).is_ok() {
+                    break;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        // On Windows, ensure the file is executable by setting the appropriate attributes
+        use std::os::windows::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(false);
+        fs::set_permissions(&path, permissions).unwrap();
     }
 
     (path, dir)
