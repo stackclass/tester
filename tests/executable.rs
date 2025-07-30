@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, io::Write, path::PathBuf, time::Duration};
 use tempfile::tempdir;
 use tester::{Executable, TesterError};
 
 fn create_test_executable(name: &str, content: &str) -> (PathBuf, tempfile::TempDir) {
     let dir = tempdir().unwrap();
     let path = dir.path().join(name);
-    fs::write(&path, content).unwrap();
+    let mut file = fs::File::create(&path).unwrap();
+    file.write_all(content.as_bytes()).unwrap();
+
+    // Flush and sync the file to disk
+    file.sync_all().unwrap();
 
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        // Sync metadata changes (optional but thorough)
+        let _ = std::fs::File::open(&path).unwrap().sync_all();
     }
-
-    fs::metadata(&path).unwrap();
 
     (path, dir)
 }
