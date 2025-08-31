@@ -48,7 +48,7 @@ impl Tester {
     }
 
     /// Collects steps by matching context cases with definition cases.
-    fn collect_steps(&self) -> Vec<Step> {
+    fn collect_steps(&self) -> Vec<Step<'_>> {
         self.context
             .cases
             .iter()
@@ -64,7 +64,7 @@ impl Tester {
     }
 
     /// Builds a `Runner` from collected steps.
-    fn build_runner(&self) -> Runner {
+    fn build_runner(&self) -> Runner<'_> {
         Runner::new(self.collect_steps())
     }
 
